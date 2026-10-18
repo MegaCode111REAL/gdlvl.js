@@ -1,0 +1,17 @@
+{
+  "name": "gdlvl",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/gdlvl.js",
+  "imports": {
+    "#codec": {
+      "browser": "./src/codec.browser.js",
+      "default": "./src/codec.node.js"
+    }
+  },
+  "browser": { "fflate": "fflate" },
+  "devDependencies": {},
+  "optionalDependencies": {
+    "fflate": "^0.8.2"
+  }
+}
