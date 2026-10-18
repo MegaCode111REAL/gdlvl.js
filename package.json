@@ -1,6 +1,6 @@
 {
   "name": "gdlvl",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "src/gdlvl.js",
   "imports": {
@@ -10,7 +10,10 @@
     }
   },
   "browser": { "fflate": "fflate" },
-  "devDependencies": {},
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "build:schema": "node scripts/build-schema.mjs"
+  },
   "optionalDependencies": {
     "fflate": "^0.8.2"
   }

@@ -10,7 +10,9 @@
 // Design rule: anything we don't understand is kept verbatim, so unknown
 // fields and object properties survive a load/save round trip untouched.
 
-import { gzip, gunzip } from "#codec"; // node: zlib, browser bundles: fflate (see package.json "imports")
+import { gzip, gunzip } from "#codec";
+import { classOf, fieldsOf, decodeValue, encodeValue } from "./schema.js";
+export { classOf, fieldsOf, idsForClass, classNames, resolveType } from "./schema.js"; // node: zlib, browser bundles: fflate (see package.json "imports")
 
 const strToU8 = (s) => new TextEncoder().encode(s);
 const strFromU8 = (b) => new TextDecoder().decode(b);
@@ -115,17 +117,26 @@ function writePlist({ head, dict }) {
 }
 
 // ---------------------------------------------------------------- property names
-// Human names for common object keys. Extend freely: unknown keys still work by number.
-// Treat this table as a living data file; verify entries against levels you inspect.
-export const PROPS = {
-  id: 1, x: 2, y: 3, flipX: 4, flipY: 5, rotation: 6,
-  r: 7, g: 8, b: 9, duration: 10, touchTriggered: 11,
-  targetColor: 23, mainColor: 21, detailColor: 22,
-  zLayer: 24, zOrder: 25, scale: 32,
-  targetGroup: 51, groups: 57,
+// Property names come from the schema (src/schema.js): each object's class (decided by its
+// object ID, key 1) says which keys exist, what they are called, and their types.
+// So `obj.set("move_x", 120)` works on a Move trigger but throws on a block.
+// A few older/short names are accepted as aliases. Schema names always win.
+export const ALIASES = {
+  id: 1, flipX: 4, flipY: 5, r: 7, g: 8, b: 9,
+  touchTriggered: 11, targetColor: 23, mainColor: 21, detailColor: 22,
+  zLayer: 24, zOrder: 25, targetGroup: 51,
 };
-const KEY_TO_NAME = Object.fromEntries(Object.entries(PROPS).map(([n, k]) => [String(k), n]));
-const keyOf = (k) => (typeof k === "number" ? String(k) : k in PROPS ? String(PROPS[k]) : k);
+const ID_FIELD = { name: "id", id: 1, type: "Int", note: "object ID" };
+
+const norm = (s) => s.toLowerCase().replace(/_/g, "");
+const toSnake = (s) => s.replace(/[A-Z]/g, (m) => "_" + m.toLowerCase());
+// Near-miss names: same letters ignoring case/underscores first, then substring matches.
+const suggest = (name, names) => {
+  const n = norm(name);
+  const exact = names.filter((x) => norm(x) === n);
+  if (exact.length) return exact;
+  return names.filter((x) => norm(x).includes(n) || (norm(x).length >= 3 && n.includes(norm(x)))).slice(0, 5);
+};
 
 // ---------------------------------------------------------------- objects
 
@@ -141,18 +152,51 @@ export class GDObject {
   }
   toString() { return this.entries.map(([k, v]) => `${k},${v}`).join(","); }
 
-  has(k) { k = keyOf(k); return this.entries.some(([ek]) => ek === k); }
-  /** Raw string value, or undefined. Accepts a name ("x") or number (2). */
-  getRaw(k) { k = keyOf(k); return this.entries.find(([ek]) => ek === k)?.[1]; }
-  /** Numeric value when it looks numeric, else the raw string. */
-  get(k) { const v = this.getRaw(k); return v !== undefined && v !== "" && !isNaN(v) ? Number(v) : v; }
+  /** Object ID (key 1), or undefined. */
+  get objectId() { const v = this.entries.find(([k]) => k === "1")?.[1]; return v === undefined ? undefined : Number(v); }
+  /** Schema class for this object, e.g. "MoveTrigger" (unlisted IDs are "Common"). */
+  get className() { return classOf(this.objectId); }
+
+  // Resolve a name or number to { key, field }. Unknown names return null, or throw when writing.
+  _lookup(k, write = false) {
+    const fields = fieldsOf(this.className);
+    if (typeof k === "number" || /^\d+$/.test(k)) {
+      const key = String(k);
+      return { key, field: key === "1" ? ID_FIELD : fields.byKey.get(key) };
+    }
+    if (k === "id") return { key: "1", field: ID_FIELD };
+    const f = fields.byName.get(k);
+    if (f) return { key: String(f.id), field: f };
+    if (k in ALIASES) { const key = String(ALIASES[k]); return { key, field: fields.byKey.get(key) }; }
+    const snake = fields.byName.get(toSnake(k)); // camelCase works too: moveX -> move_x
+    if (snake) return { key: String(snake.id), field: snake };
+    if (!write) return null;
+    const hint = suggest(k, [...fields.byName.keys()]);
+    throw new Error(`Unknown property "${k}" for ${this.className} (object ${this.objectId})` +
+      (hint.length ? `. Did you mean: ${hint.join(", ")}?` : "") + ` You can also use the raw key number.`);
+  }
+
+  has(k) { const l = this._lookup(k); return !!l && this.entries.some(([ek]) => ek === l.key); }
+  /** Raw string value as stored in the file, or undefined. Accepts a name ("x") or number (2). */
+  getRaw(k) { const l = this._lookup(k); return l ? this.entries.find(([ek]) => ek === l.key)?.[1] : undefined; }
+  /** Typed value: numbers for Int/Float, booleans for Bool, number[] for group lists, variant names for enums. */
+  get(k) {
+    const l = this._lookup(k);
+    if (!l) return undefined;
+    const raw = this.entries.find(([ek]) => ek === l.key)?.[1];
+    if (raw === undefined) return l.field?.type === "Bool" ? false : undefined;
+    if (!l.field) return raw !== "" && !isNaN(raw) ? Number(raw) : raw;
+    return decodeValue(l.field.type, raw);
+  }
+  /** Set a property by schema name or key number. Throws on a name this object's class doesn't have. */
   set(k, v) {
-    k = keyOf(k); v = typeof v === "boolean" ? (v ? "1" : "0") : String(v);
-    const e = this.entries.find(([ek]) => ek === k);
-    if (e) e[1] = v; else this.entries.push([k, v]);
+    const { key, field } = this._lookup(k, true);
+    const raw = field ? encodeValue(field.type, v) : typeof v === "boolean" ? (v ? "1" : "0") : String(v);
+    const e = this.entries.find(([ek]) => ek === key);
+    if (e) e[1] = raw; else this.entries.push([key, raw]);
     return this;
   }
-  delete(k) { k = keyOf(k); this.entries = this.entries.filter(([ek]) => ek !== k); return this; }
+  delete(k) { const l = this._lookup(k); if (l) this.entries = this.entries.filter(([ek]) => ek !== l.key); return this; }
 
   // groups (key 57) are stored dot-separated: "1.2.3"
   get groupList() { return (this.getRaw(57) ?? "").split(".").filter(Boolean).map(Number); }
@@ -163,9 +207,27 @@ export class GDObject {
     return this;
   }
 
-  /** Friendly view for debugging: { id: 1, x: 225, y: 15, "155": 1 } */
+  /** Keys stored on this object that its class doesn't define (kept on save, but worth a look). */
+  unknownKeys() {
+    const { byKey } = fieldsOf(this.className);
+    return this.entries.map(([k]) => k).filter((k) => k !== "1" && !byKey.has(k));
+  }
+
+  /** Every property this object's class supports, with current values. Handy for building a property panel. */
+  properties() {
+    const { byName } = fieldsOf(this.className);
+    return [...byName.values()].map((f) => ({
+      name: f.name, key: f.id, type: f.type, note: f.note,
+      isSet: this.has(f.id), value: this.get(f.id),
+    }));
+  }
+
+  /** Friendly view: { id: 901, x: 300, y: 105, target_group: 3 }. Unknown keys appear by number. */
   toJSON() {
-    return Object.fromEntries(this.entries.map(([k, v]) => [KEY_TO_NAME[k] ?? k, isNaN(v) || v === "" ? v : Number(v)]));
+    return Object.fromEntries(this.entries.map(([k, raw]) => {
+      const { field } = this._lookup(k);
+      return [field?.name ?? k, field ? decodeValue(field.type, raw) : raw !== "" && !isNaN(raw) ? Number(raw) : raw];
+    }));
   }
 }
 
@@ -256,6 +318,13 @@ export class Level {
   }
   /** Objects matching a predicate or a {x, y, id,...} shape. */
   find(q) { return this.objects.filter(matcher(q)); }
+  /** Report objects holding keys their class doesn't define: [{ index, id, className, unknown: ["155", ...] }]. */
+  validate() {
+    return this.objects.flatMap((o, index) => {
+      const unknown = o.unknownKeys();
+      return unknown.length ? [{ index, id: o.objectId, className: o.className, unknown }] : [];
+    });
+  }
   /** Delete matching objects; returns how many were removed. */
   remove(q) {
     const m = matcher(q), before = this.objects.length;
@@ -271,7 +340,12 @@ export class Level {
 function matcher(q) {
   if (typeof q === "function") return q;
   const entries = Object.entries(q);
-  return (o) => entries.every(([k, v]) => o.get(k) === v);
+  // A plain value must equal the property; for group lists, {groups: 5} means "is in group 5".
+  return (o) => entries.every(([k, v]) => {
+    const a = o.get(k);
+    if (Array.isArray(a)) return Array.isArray(v) ? JSON.stringify(a) === JSON.stringify(v) : a.includes(v);
+    return a === v;
+  });
 }
 
 /** Axis-aligned selection helper: objects with x0<=x<=x1 and y0<=y<=y1. */
