@@ -12,7 +12,9 @@
 
 import { gzip, gunzip } from "#codec";
 import { classOf, fieldsOf, decodeValue, encodeValue } from "./schema.js";
-export { classOf, fieldsOf, idsForClass, classNames, resolveType } from "./schema.js"; // node: zlib, browser bundles: fflate (see package.json "imports")
+export { classOf, fieldsOf, idsForClass, classNames, resolveType } from "./schema.js";
+import { objectName } from "./names.js";
+export { objectName, findObjects, objectCount } from "./names.js"; // node: zlib, browser bundles: fflate (see package.json "imports")
 
 const strToU8 = (s) => new TextEncoder().encode(s);
 const strFromU8 = (b) => new TextDecoder().decode(b);
@@ -156,6 +158,8 @@ export class GDObject {
   get objectId() { const v = this.entries.find(([k]) => k === "1")?.[1]; return v === undefined ? undefined : Number(v); }
   /** Schema class for this object, e.g. "MoveTrigger" (unlisted IDs are "Common"). */
   get className() { return classOf(this.objectId); }
+  /** Display name for this object's ID, e.g. "Black Gradient Spike" (undefined if the ID has no name). */
+  get name() { return objectName(this.objectId); }
 
   // Resolve a name or number to { key, field }. Unknown names return null, or throw when writing.
   _lookup(k, write = false) {

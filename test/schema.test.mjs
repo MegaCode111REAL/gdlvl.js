@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { Level, GDObject, classOf, fieldsOf, idsForClass, classNames, resolveType, unpack } from "../src/gdlvl.js";
+import {
+  Level, GDObject, classOf, fieldsOf, idsForClass, classNames, resolveType, unpack,
+  objectName, findObjects, objectCount,
+} from "../src/gdlvl.js";
 import schema from "../src/schema-data.js";
 
 const sample = () => readFileSync(new URL("./fixtures/sample.gdlvl", import.meta.url), "utf8");
@@ -103,6 +106,29 @@ test("properties() lists every field with current values (for property panels)",
   assert.equal(p.find((f) => f.name === "move_y").value, -30);
   assert.equal(p.find((f) => f.name === "move_y").isSet, true);
   assert.equal(p.find((f) => f.name === "move_x").isSet, false);
+});
+
+test("object names", () => {
+  assert.equal(objectName(8), "Black Gradient Spike");
+  assert.equal(objectName(901), "Move Trigger");
+  assert.equal(objectName(999999), undefined);
+  assert.equal(objectCount(), 3986);
+  const level = Level.fromFileText(sample());
+  assert.deepEqual(level.objects.map((o) => o.name), [
+    "Black Gradient Square", "Black Gradient Square", "Grid Patterned Pillar Square", "Black Gradient Spike", "Half Black Gradient Spike",
+  ]);
+});
+
+test("findObjects searches by words in any order", () => {
+  const hits = findObjects("trigger move");
+  assert.ok(hits.some((h) => h.id === 901 && h.className === "MoveTrigger"));
+  assert.ok(findObjects("SPIKE black").every((h) => /spike/i.test(h.name) && /black/i.test(h.name)));
+  assert.equal(findObjects("zzzz-not-an-object").length, 0);
+  assert.equal(findObjects("square", 5).length, 5);
+});
+
+test("every schema-mapped object ID has a name", () => {
+  for (const id of Object.keys(schema.idClasses)) assert.ok(objectName(id), `no name for ${id}`);
 });
 
 test("round trip of the sample file is lossless", () => {

@@ -43,6 +43,19 @@ level.validate();       // objects holding keys their class doesn't define
 - `classOf(id)`, `fieldsOf(className)`, `idsForClass(className)` expose the schema directly,
   e.g. to build a property panel for an editor.
 
+## Object names
+
+3,986 object IDs have names, for building an object palette or searching by name.
+
+```js
+import { objectName, findObjects } from "./src/gdlvl.js";
+
+objectName(8);                     // "Black Gradient Spike"
+findObjects("move trigger");       // [{ id: 901, name: "Move Trigger", className: "MoveTrigger" }]
+findObjects("spike black", 20);    // every word must match, in any order; second argument limits results
+level.objects[0].name;             // name of an object already in a level
+```
+
 ## Format
 
 - `.gdlvl` = base64url( gzip( plist XML ) )
@@ -62,7 +75,7 @@ in `package.json`; it needs `npm install fflate`. The browser codec is untested 
 
 ```
 npm test                 # schema and round-trip tests
-npm run build:schema     # regenerate src/schema-data.js after replacing data/schema.json
+npm run build:data       # regenerate src/schema-data.js and src/names-data.js from data/
 node test/demo.mjs test/fixtures/sample.gdlvl /tmp/out.gdlvl
 ```
 
@@ -71,10 +84,11 @@ node test/demo.mjs test/fixtures/sample.gdlvl /tmp/out.gdlvl
 - Edited levels have not yet been loaded in the game.
 - Objects added with `add()` get only the properties you give them, not the editor's defaults
   (for example `color_1_index`, which every object in the sample level carries).
-- Object *names* (which ID is which block, spike or portal) are not included yet, only the
-  classes and properties.
+- Object names are the site's descriptive names (for example "Black Gradient Spike"), not the
+  in-game editor's tab/category layout.
 
 ## Credits
 
-The property schema comes from [GD Info Explorer](https://flowvix.github.io/gd-info-explorer/).
+The property schema and object names come from
+[GD Info Explorer](https://flowvix.github.io/gd-info-explorer/).
 Thanks to Alphalaneous and the community for naming the objects. See [NOTICE.md](NOTICE.md).
