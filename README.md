@@ -68,8 +68,8 @@ automatically.
 
 ## Browser use
 
-Node uses the built-in `zlib`. Bundlers pick `src/codec.browser.js` through the `browser` condition
-in `package.json`; it needs `npm install fflate`. The browser codec is untested so far.
+Node uses the built-in `zlib`. Browsers and bundlers use `src/codec.browser.js` (a small built-in gzip reader/writer, no dependencies) through the `browser` condition
+in `package.json`. Exported files from the browser codec are not compressed (the game reads them fine).
 
 ## Development
 

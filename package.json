@@ -9,12 +9,9 @@
       "default": "./src/codec.node.js"
     }
   },
-  "browser": { "fflate": "fflate" },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "build:data": "node scripts/build-data.mjs"
-  },
-  "optionalDependencies": {
-    "fflate": "^0.8.2"
+    "build:data": "node scripts/build-data.mjs",
+    "build:assets": "node scripts/build-assets.mjs"
   }
 }

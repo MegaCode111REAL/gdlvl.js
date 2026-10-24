@@ -1,0 +1,118 @@
+{
+ "pxPerUnit": 4,
+ "placeholders": {
+  "block": {
+   "file": "placeholders/block.svg",
+   "size": [
+    30,
+    30
+   ],
+   "tint": true
+  },
+  "slab": {
+   "file": "placeholders/slab.svg",
+   "size": [
+    30,
+    15
+   ],
+   "tint": true
+  },
+  "spike": {
+   "file": "placeholders/spike.svg",
+   "size": [
+    30,
+    30
+   ],
+   "tint": true
+  },
+  "halfspike": {
+   "file": "placeholders/halfspike.svg",
+   "size": [
+    30,
+    15
+   ],
+   "tint": true
+  },
+  "slope": {
+   "file": "placeholders/slope.svg",
+   "size": [
+    30,
+    30
+   ],
+   "tint": true
+  },
+  "wideslope": {
+   "file": "placeholders/wideslope.svg",
+   "size": [
+    60,
+    30
+   ],
+   "tint": true
+  },
+  "pad": {
+   "file": "placeholders/pad.svg",
+   "size": [
+    30,
+    12
+   ],
+   "tint": true
+  },
+  "orb": {
+   "file": "placeholders/orb.svg",
+   "size": [
+    30,
+    30
+   ],
+   "tint": true
+  },
+  "portal": {
+   "file": "placeholders/portal.svg",
+   "size": [
+    32,
+    86
+   ],
+   "tint": false
+  },
+  "saw": {
+   "file": "placeholders/saw.svg",
+   "size": [
+    60,
+    60
+   ],
+   "tint": true
+  },
+  "trigger": {
+   "file": "placeholders/trigger.svg",
+   "size": [
+    30,
+    30
+   ],
+   "tint": false
+  },
+  "text": {
+   "file": "placeholders/text.svg",
+   "size": [
+    60,
+    30
+   ],
+   "tint": true
+  },
+  "deco": {
+   "file": "placeholders/deco.svg",
+   "size": [
+    30,
+    30
+   ],
+   "tint": true
+  },
+  "start": {
+   "file": "placeholders/start.svg",
+   "size": [
+    30,
+    30
+   ],
+   "tint": false
+  }
+ },
+ "objects": {}
+}
