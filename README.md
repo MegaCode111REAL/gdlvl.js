@@ -22,6 +22,34 @@ level.add(901, 300, 105, {                              // 901 = Move trigger
 writeFileSync("out.gdlvl", level.toFileText());
 ```
 
+## Browser editor
+
+A static page (no build step, no server code) that opens, edits and exports `.gdlvl` files.
+
+```
+npm run serve        # then open http://localhost:8080/web/
+```
+
+ES modules need `http://`, so it won't work from a `file://` URL. To host it, serve the repository
+root as static files (for example GitHub Pages from `main`, root folder): the root `index.html`
+redirects to `web/`, and the page imports the library from `src/`.
+
+- **Open / Export / New**, or drop a `.gdlvl` on the page. The level is autosaved in your browser.
+- **Place:** pick an object in the list (search by name, filter by class), click the canvas.
+- **Select:** click, shift-click, or drag a box. Drag to move; it snaps to the grid (Alt = no snap).
+- **Edit:** the properties panel is generated from the schema, so a Move trigger shows
+  `target_group`, `move_x`, `duration`, `easing` and so on. Colour channels are editable too.
+- **Keys:** `Del` delete, arrows nudge, `R` rotate, `F` flip (Shift = other axis), `Ctrl+Z/Y` undo/redo,
+  `Ctrl+C/V/D` copy/paste/duplicate, `Ctrl+A` select all, `G` cycle grid, `Home` fit level, `Esc` cancel.
+  Pan with middle or right mouse button, or Space + drag; zoom with the wheel.
+- Selected triggers draw a dashed line to every object in the group they target.
+
+**Art:** objects are drawn from `web/assets/`. Everything starts as a placeholder shape; your own
+drawings go in `web/assets/objects/` named by object ID, or can be loaded into the page at runtime
+with **Textures > Load files**. See [web/assets/README.md](web/assets/README.md).
+
+Not built yet: playing the level, live trigger previews, editor layers, free transform, warp tools.
+
 ## Properties
 
 Each object's class comes from its object ID, and the class decides which properties exist, what
@@ -69,12 +97,14 @@ automatically.
 ## Browser use
 
 Node uses the built-in `zlib`. Browsers and bundlers use `src/codec.browser.js` (a small built-in gzip reader/writer, no dependencies) through the `browser` condition
-in `package.json`. Exported files from the browser codec are not compressed (the game reads them fine).
+in `package.json`. Files written by the browser codec are valid gzip but not compressed, so they are larger than the game's own; they have not been tried in the game yet.
 
 ## Development
 
 ```
-npm test                 # schema and round-trip tests
+npm test                 # library tests (schema, names, codec, round trips)
+npm run test:web         # headless-browser test of the editor (needs Playwright)
+npm run build:assets     # rescan web/assets/objects/ and rebuild web/assets/manifest.json
 npm run build:data       # regenerate src/schema-data.js and src/names-data.js from data/
 node test/demo.mjs test/fixtures/sample.gdlvl /tmp/out.gdlvl
 ```

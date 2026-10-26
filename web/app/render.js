@@ -51,6 +51,7 @@ export class Renderer {
     this.tintCache = new Map();
     this.order = []; this.orderRev = -1;
     this.dirty = true; this.dpr = 1;
+    this.onView = null;    // called whenever pan or zoom changes
     assets.onUpdate = () => this.requestDraw();
     this.loop = () => { if (this.dirty) { this.dirty = false; this.draw(); } requestAnimationFrame(this.loop); };
     requestAnimationFrame(this.loop);
@@ -81,21 +82,29 @@ export class Renderer {
     this.view.zoom = Math.min(10, Math.max(0.04, this.view.zoom * factor));
     const after = this.toWorld(px, py);
     this.view.cx += before.x - after.x; this.view.cy += before.y - after.y;
-    this.requestDraw();
+    this.requestDraw(); this.onView?.();
   }
 
-  pan(dxPx, dyPx) { this.view.cx -= dxPx / this.view.zoom; this.view.cy += dyPx / this.view.zoom; this.requestDraw(); }
+  pan(dxPx, dyPx) { this.view.cx -= dxPx / this.view.zoom; this.view.cy += dyPx / this.view.zoom; this.requestDraw(); this.onView?.(); }
 
+  /** Show the start of the level at a readable size (what you want right after opening a file). */
+  home() {
+    const r = this.canvas.getBoundingClientRect();
+    this.view = { cx: r.width / 2 / 2 - 40, cy: 110, zoom: 2 };
+    this.requestDraw(); this.onView?.();
+  }
+
+  /** Zoom out until the whole level is in view. */
   fit() {
     const objs = this.store.level.objects;
     const r = this.canvas.getBoundingClientRect();
-    if (!objs.length) { this.view = { cx: 300, cy: 120, zoom: 2 }; this.requestDraw(); return; }
+    if (!objs.length) { this.home(); return; }
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const o of objs) { const p = parseObj(o); x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
     x0 -= 30; x1 += 30; y0 = Math.min(y0, 0) - 30; y1 += 30;
     this.view.zoom = Math.min(10, Math.max(0.04, Math.min(r.width / (x1 - x0), r.height / (y1 - y0))));
     this.view.cx = (x0 + x1) / 2; this.view.cy = (y0 + y1) / 2;
-    this.requestDraw();
+    this.requestDraw(); this.onView?.();
   }
 
   /** Objects in draw order (z layer, z order, then file order). Rebuilt only when the order can change. */

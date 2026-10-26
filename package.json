@@ -12,6 +12,8 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "build:data": "node scripts/build-data.mjs",
-    "build:assets": "node scripts/build-assets.mjs"
+    "build:assets": "node scripts/build-assets.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test:web": "node test/web-smoke.mjs"
   }
 }

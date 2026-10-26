@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gdlvl editor</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">{ "imports": { "#codec": "../src/codec.browser.js" } }</script>
+<script type="module" src="app/main.js"></script>
+</head>
+<body>
+<header id="top">
+  <strong class="brand">gdlvl editor</strong>
+  <button id="btn-new" title="New empty level">New</button>
+  <button id="btn-open" title="Open a .gdlvl file (or drop one on the page)">Open</button>
+  <button id="btn-export" title="Download the level as .gdlvl">Export</button>
+  <span class="sep"></span>
+  <button id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
+  <button id="btn-redo" title="Redo (Ctrl+Y)">Redo</button>
+  <span class="sep"></span>
+  <label title="Grid step for placing and moving (G cycles)">Grid
+    <select id="snap">
+      <option value="30" selected>30</option><option value="15">15</option><option value="7.5">7.5</option>
+      <option value="3.75">3.75</option><option value="1">1</option><option value="0">off</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="opt-ids" checked> IDs</label>
+  <label><input type="checkbox" id="opt-grid" checked> Grid lines</label>
+  <button id="btn-fit" title="Fit the level in view (Home)">Fit</button>
+  <span class="sep"></span>
+  <details id="tex-menu">
+    <summary>Textures</summary>
+    <div class="menu">
+      <button id="btn-tex-load">Load files…</button>
+      <button id="btn-tex-clear">Clear loaded</button>
+      <small id="tex-info"></small>
+    </div>
+  </details>
+  <span class="grow"></span>
+  <input id="level-name" type="text" placeholder="Level name" aria-label="Level name">
+</header>
+
+<main>
+  <aside id="left">
+    <h2>Objects</h2>
+    <div class="row">
+      <input id="pal-q" type="search" placeholder="Search objects (e.g. spike, move trigger)" aria-label="Search objects">
+    </div>
+    <div class="row"><select id="pal-class" aria-label="Filter by class"></select></div>
+    <ul id="pal-list"></ul>
+  </aside>
+
+  <section id="stage">
+    <canvas id="canvas"></canvas>
+    <div id="hint">Click an object in the list, then click the canvas to place it. Esc to stop.</div>
+  </section>
+
+  <aside id="right">
+    <h2>Properties</h2>
+    <div id="props"></div>
+    <h2>Colours</h2>
+    <div id="colors"></div>
+    <h2>Level</h2>
+    <div id="info"></div>
+  </aside>
+</main>
+
+<footer id="status">
+  <span id="st-cursor">x 0 y 0</span><span id="st-zoom"></span><span id="st-sel"></span><span class="grow"></span>
+  <span id="st-save"></span>
+  <span class="credit">Object data: <a href="https://flowvix.github.io/gd-info-explorer/" target="_blank" rel="noopener">GD Info Explorer</a> (Alphalaneous and the community)</span>
+</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<input id="file-open" type="file" accept=".gdlvl,.txt" hidden>
+<input id="file-tex" type="file" accept="image/*,.json" multiple hidden>
+<div id="drop">Drop a .gdlvl file to open it</div>
+</body>
+</html>
