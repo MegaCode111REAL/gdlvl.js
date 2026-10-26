@@ -4,12 +4,7 @@ Goal: one static page (no server, no build step, hostable on GitHub Pages) that 
 shows it with the game's real textures, lets you edit it visually, and exports a `.gdlvl` back.
 It reuses the library in `src/` unchanged, so the editor and the scripting API edit the same model.
 
-Status: **first version built** (see README, "Browser editor"): viewer, placeholder and custom art,
-select/move/place/rotate/flip, schema-driven property panel, colour channels, undo/redo, autosave,
-import/export. The sections below are the original plan; "Textures" changed: art is now drawn by the
-project owner and loaded by object ID from `web/assets/` (or from files loaded at runtime), so the
-game's spritesheets and the ID-to-frame-name table are no longer needed. Still to do: trigger
-workflow polish, editor layers, more tools, and checking exported levels in the game.
+Status: **browser editor built** (see README, "Browser editor"): viewer, select/move/place/rotate/flip, schema-driven property panel, colour channels, undo/redo, autosave, import/export, custom art, and a plist-backed original-texture atlas loader. The atlas loader reads the bundled UHD sheets and matching plist files. Exact object-ID-to-frame associations are still incomplete; common IDs are mapped explicitly and other objects use conservative name-based matching or placeholders. Still to do: improve the frame mapping, trigger workflow polish, editor layers, more tools, and checking exported levels in the game.
 
 ## Gate before building: does the game accept our files?
 
