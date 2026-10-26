@@ -150,13 +150,12 @@ export class Renderer {
     for (let i = order.length - 1; i >= 0; i--) {
       const o = order[i], p = parseObj(o), s = this.assets.sprite(p.id);
       const th = p.rot * D2R, c = Math.cos(th), sn = Math.sin(th), dx = x - p.x, dy = y - p.y;
-      // Invert the same rotation/scale transform used by draw(). The old signs
-      // applied +rotation instead of -rotation, so rotated non-square sprites
-      // (notably portals) had incorrect clickable bounds.
+      // Convert world coordinates (Y up) to the sprite's local canvas coordinates (Y down),
+      // then undo its rotation and scale. This must mirror draw()'s setTransform exactly.
       const scaleX = p.sx * p.sc, scaleY = p.sy * p.sc;
-      if (!scaleX || !scaleY) continue;
-      const lx = (dx * c + dy * sn) / scaleX;
-      const ly = (-dx * sn + dy * c) / scaleY;
+      if (!Number.isFinite(scaleX) || !Number.isFinite(scaleY) || !scaleX || !scaleY) continue;
+      const lx = (dx * c - dy * sn) / scaleX;
+      const ly = (-dx * sn - dy * c) / scaleY;
       if (Math.abs(lx) <= s.w / 2 && Math.abs(ly) <= s.h / 2) return o;
     }
     return null;
