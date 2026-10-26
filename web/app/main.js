@@ -66,6 +66,24 @@ async function main() {
 
   const texInfo = () => { $("tex-info").textContent = `${originalTextures.count} original frames · ${Object.keys(assets.manifest.objects).length} custom repo images · ${assets.packCount} loaded files`; $("btn-original-textures").textContent = originalTextures.enabled ? "Disable original textures" : "Enable original textures"; };
   $("btn-original-textures").onclick = () => { originalTextures.setEnabled(!originalTextures.enabled); assets.originalTexturesChanged(); texInfo(); toast(originalTextures.enabled ? "Original textures enabled" : "Original textures disabled"); };
+  const frameSelect = $("original-frame-select");
+  const renderFrameOptions = () => {
+    const names = originalTextures.frameNames($("original-frame-search").value);
+    frameSelect.replaceChildren(...(names.length ? names.map((name) => Object.assign(document.createElement("option"), { value: name, textContent: name })) : [Object.assign(document.createElement("option"), { value: "", textContent: "No matches — type part of a frame name" })]));
+  };
+  $("original-frame-search").addEventListener("input", renderFrameOptions);
+  $("btn-assign-original-frame").onclick = guard(async () => {
+    await originalTextures.setMapping($("original-object-id").value, frameSelect.value);
+    assets.originalTexturesChanged(); texInfo();
+    toast(`Mapped object #${$("original-object-id").value} to ${frameSelect.value}`);
+  });
+  $("btn-clear-original-frame").onclick = guard(async () => {
+    const id = $("original-object-id").value;
+    if (!id) throw new Error("Enter an object ID first.");
+    await originalTextures.clearMapping(id);
+    assets.originalTexturesChanged(); texInfo();
+    toast(`Cleared custom mapping for object #${id}`);
+  });
   $("btn-tex-load").onclick = () => $("file-tex").click();
   $("file-tex").onchange = guard(async (e) => {
     const n = await assets.loadPackFiles(e.target.files); e.target.value = "";
