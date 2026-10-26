@@ -1,5 +1,9 @@
 # Editor art
 
+## Original Geometry Dash textures
+
+The editor now reads `data/spritesheets/GJ_GameSheet-uhd.png`, `GJ_GameSheet02-uhd.png`, and `GJ_GameSheet03-uhd.png` together with each matching `.plist`. It crops atlas frames in the browser and respects the plist texture rectangle, rotated-frame flag, source size, and sprite offset. Use **Textures > Disable original textures** to compare with placeholders/custom art. The ID-to-frame table is incomplete, so frames are selected from explicit common-object mappings and conservative name-based matching; an object with no reliable match falls back to its placeholder.
+
 The editor draws every object from this folder. Until you add your own art, each object gets a
 **placeholder** chosen from its name (block, slab, spike, slope, pad, orb, portal, saw, trigger, ...);
 the files are in `placeholders/`.
