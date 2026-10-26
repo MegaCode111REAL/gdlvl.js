@@ -49,6 +49,8 @@ export class Renderer {
     this.ghost = null;     // { id, x, y } while placing from the palette
     this.box = null;       // { x0, y0, x1, y1 } while box-selecting (world units)
     this.tintCache = new Map();
+    this.tintImageIds = new WeakMap();
+    this.nextTintImageId = 1;
     this.order = []; this.orderRev = -1;
     this.dirty = true; this.dpr = 1;
     this.onView = null;    // called whenever pan or zoom changes
@@ -120,7 +122,11 @@ export class Renderer {
 
   tinted(entry, c) {
     const img = entry.img;
-    const key = `${img.src}|${c.r},${c.g},${c.b}`;
+    // Atlas frames are canvases, so img.src is empty for every one of them. Key tint
+    // results by image identity or different sprites with the same colour share one texture.
+    let imageId = this.tintImageIds.get(img);
+    if (!imageId) { imageId = this.nextTintImageId++; this.tintImageIds.set(img, imageId); }
+    const key = `${imageId}|${c.r},${c.g},${c.b}`;
     let t = this.tintCache.get(key);
     if (!t) {
       if (this.tintCache.size > 3000) this.tintCache.clear();
