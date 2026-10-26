@@ -4,6 +4,7 @@ import { Assets } from "./assets.js";
 import { Renderer } from "./render.js";
 import { initPalette, initProps, initColors, initInfo } from "./ui.js";
 import { objectName } from "../../src/gdlvl.js";
+import { installOriginalTextures } from "./original-textures.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -19,6 +20,7 @@ async function main() {
   const store = new Store();
   const assets = new Assets("../assets/");
   try { await assets.load(); } catch (e) { toast(e.message, true); }
+  const originalTextures = await installOriginalTextures(assets);
 
   const loadBlank = async () => store.load(await (await fetch(new URL("../assets/blank.gdlvl", import.meta.url))).text());
   const saved = await store.restoreAutosave();
@@ -62,7 +64,8 @@ async function main() {
   $("opt-ids").onchange = (e) => { renderer.opts.showIds = e.target.checked; redraw(); };
   $("opt-grid").onchange = (e) => { renderer.opts.grid = e.target.checked; redraw(); };
 
-  const texInfo = () => ($("tex-info").textContent = `${Object.keys(assets.manifest.objects).length} repo images, ${assets.packCount} loaded files`);
+  const texInfo = () => { $("tex-info").textContent = `${originalTextures.count} original frames · ${Object.keys(assets.manifest.objects).length} custom repo images · ${assets.packCount} loaded files`; $("btn-original-textures").textContent = originalTextures.enabled ? "Disable original textures" : "Enable original textures"; };
+  $("btn-original-textures").onclick = () => { originalTextures.setEnabled(!originalTextures.enabled); assets.originalTexturesChanged(); texInfo(); toast(originalTextures.enabled ? "Original textures enabled" : "Original textures disabled"); };
   $("btn-tex-load").onclick = () => $("file-tex").click();
   $("file-tex").onchange = guard(async (e) => {
     const n = await assets.loadPackFiles(e.target.files); e.target.value = "";
