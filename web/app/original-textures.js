@@ -133,7 +133,7 @@ export class OriginalTextures {
     const mappingUrl = "https://gist.githubusercontent.com/frqubit/39bf5e3c6a072096424d93055991d7f8/raw/128deaf5241ed7d3944b0b35e3b00d35cd106957/objectids.yml";
     try {
       const response = await fetch(mappingUrl);
-      if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const source = await response.text();
       for (const line of source.split(/\r?\n/)) {
         const match = line.match(/^\s*\|?\s*([^:#]+?\.png)\s*:\s*(\d+)\s*$/i);
@@ -143,10 +143,10 @@ export class OriginalTextures {
         if (this.frames.has(frameName) && Number.isSafeInteger(id) && id > 0) this.mapping.set(id, frameName);
       }
       if (!this.mapping.size) throw new Error("No object IDs matched loaded atlas frames");
-      this.mappingSource = \`GD object mapping (\${this.mapping.size} exact matches)\`;
+      this.mappingSource = `GD object mapping (${this.mapping.size} exact matches)`;
     } catch (e) {
       // Correct fallback for the core objects; never substitute a visually similar sprite.
-      this.mappingSource = \`built-in fallback: \${e.message}\`;
+      this.mappingSource = `built-in fallback: ${e.message}`;
       for (const [id, frameName] of [
         [1, "square_01_001.png"], [2, "square_02_001.png"], [3, "square_03_001.png"],
         [4, "square_04_001.png"], [5, "square_05_001.png"], [6, "square_06_001.png"],
