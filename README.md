@@ -44,9 +44,7 @@ redirects to `web/`, and the page imports the library from `src/`.
   Pan with middle or right mouse button, or Space + drag; zoom with the wheel.
 - Selected triggers draw a dashed line to every object in the group they target.
 
-**Art:** objects are drawn from `web/assets/`. Everything starts as a placeholder shape; your own
-drawings go in `web/assets/objects/` named by object ID, or can be loaded into the page at runtime
-with **Textures > Load files**. See [web/assets/README.md](web/assets/README.md).
+**Art:** the editor loads the bundled UHD Geometry Dash sprite sheets and their matching plist metadata from `data/spritesheets/`, crops frames (including packed rotations and offsets), and uses original frames where the object-to-frame association can be inferred. The texture menu can disable original textures, load custom art, or clear runtime-loaded art. Unmatched objects still use placeholders. See [web/assets/README.md](web/assets/README.md).
 
 Not built yet: playing the level, live trigger previews, editor layers, free transform, warp tools.
 
