@@ -66,7 +66,7 @@ async function main() {
 
   const texInfo = () => {
     const status = originalTextures.ready
-      ? `${originalTextures.count} original frames loaded`
+      ? `${originalTextures.count} original frames loaded · ${originalTextures.mapping.size} exact object mappings`
       : `Original textures FAILED to load: ${originalTextures.error || "no atlas frames found"}`;
     $("tex-info").textContent = `${status} · ${Object.keys(assets.manifest.objects).length} custom repo images · ${assets.packCount} loaded files`;
     $("btn-original-textures").textContent = originalTextures.enabled ? "Disable original textures" : "Enable original textures";
