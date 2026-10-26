@@ -215,6 +215,6 @@ export async function installOriginalTextures(assets) {
   assets.thumb = (id) => original.thumb(id) ?? baseThumb(id);
   const oldUpdate = assets.onUpdate;
   assets.onUpdate = () => { oldUpdate?.(); assets.onUpdateList?.(); };
-  assets.originalTexturesChanged = () => { original.resolved.clear(); assets.cache.clear(); assets.onUpdate(); };
+  assets.originalTexturesChanged = () => { original.resolved.clear(); assets.cache.clear(); assets.onUpdate(); assets.onUpdateList?.(); };
   return original;
 }
