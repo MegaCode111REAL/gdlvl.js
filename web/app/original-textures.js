@@ -43,6 +43,9 @@ function parseFrames(xml, sheetName, image) {
     crop.width = Math.max(1, cropW); crop.height = Math.max(1, cropH);
     const cg = crop.getContext("2d");
     if (rotated) {
+      // TexturePacker stores rotated frames with their packed width/height swapped.
+      // Draw the packed rectangle into the correctly swapped destination before rotating it
+      // back into the frame's unrotated orientation.
       cg.translate(cropW / 2, cropH / 2);
       cg.rotate(-Math.PI / 2);
       cg.drawImage(image, x, y, packedW, packedH, -cropH / 2, -cropW / 2, cropH, cropW);
@@ -207,7 +210,13 @@ export class OriginalTextures {
 
 export async function installOriginalTextures(assets) {
   const original = new OriginalTextures();
-  try { await original.load(); } catch (e) { console.warn("[gdlvl] original textures unavailable:", e); }
+  try {
+    await original.load();
+    console.info(`[gdlvl] loaded ${original.count} original Geometry Dash atlas frames`);
+  } catch (e) {
+    original.error = e?.message || String(e);
+    console.error("[gdlvl] original textures unavailable:", e);
+  }
   const baseSprite = assets.sprite.bind(assets);
   const baseThumb = assets.thumb.bind(assets);
   assets.originalTextures = original;
