@@ -2,6 +2,7 @@
 // Sprite-sheet files are in ../../data/spritesheets; placeholders remain the fallback when a
 // frame cannot be confidently associated with an object ID.
 import { objectName, classOf } from "../../src/gdlvl.js";
+import { kvGet, kvSet } from "./idb.js";
 
 const SHEETS = [
   ["GJ_GameSheet-uhd", "../../data/spritesheets/GJ_GameSheet-uhd.png", "../../data/spritesheets/GJ_GameSheet-uhd.plist"],
@@ -128,6 +129,8 @@ export class OriginalTextures {
       } catch (e) { errors.push(`${sheetName}: ${e.message}`); }
     }
     this.count = this.frames.size;
+    const savedMap = await kvGet("originalFrameMap");
+    if (Array.isArray(savedMap)) for (const [id, frameName] of savedMap) if (this.frames.has(frameName)) this.mapping.set(Number(id), frameName);
     this.ready = this.count > 0;
     this.error = errors.join("; ");
     if (!this.ready) throw new Error("Original Geometry Dash textures could not be loaded. " + this.error);
@@ -176,6 +179,27 @@ export class OriginalTextures {
     if (!frame) return null;
     if (!frame.dataUrl) frame.dataUrl = canvas.toDataURL("image/png");
     return frame.dataUrl;
+  }
+
+  async setMapping(id, frameName) {
+    id = Number(id);
+    if (!Number.isInteger(id) || id < 1 || !this.frames.has(frameName)) throw new Error("Choose a valid object ID and atlas frame.");
+    this.mapping.set(id, frameName);
+    this.resolved.delete(id);
+    await kvSet("originalFrameMap", [...this.mapping.entries()]);
+  }
+
+  async clearMapping(id) {
+    id = Number(id);
+    this.mapping.delete(id);
+    this.resolved.delete(id);
+    await kvSet("originalFrameMap", [...this.mapping.entries()]);
+  }
+
+  frameNames(query = "") {
+    const q = query.trim().toLowerCase();
+    const names = [...this.frames.keys()];
+    return q ? names.filter((name) => name.toLowerCase().includes(q)).slice(0, 150) : [];
   }
 
   setEnabled(enabled) { this.enabled = !!enabled; this.resolved.clear(); }
