@@ -151,15 +151,9 @@ export class OriginalTextures {
       this.resolved.set(id, result);
       return result;
     }
-    const name = objectName(id) ?? "";
-    const cls = classOf(id) ?? "";
-    let best = null, bestScore = 0;
-    for (const [frameName, frame] of this.frames) {
-      const score = scoreFrame(frameName, name, id, cls);
-      if (score > bestScore) { bestScore = score; best = frameName; }
-    }
-    // A weak fuzzy match is worse than a clear placeholder.
-    const result = bestScore >= 8 ? this.layered(best) : null;
+    // Do not guess: the atlas contains many similar sprites and name-based matching
+    // assigns unrelated textures to object IDs. Use verified mappings only.
+    const result = null;
     this.resolved.set(id, result);
     return result;
   }
