@@ -64,7 +64,13 @@ async function main() {
   $("opt-ids").onchange = (e) => { renderer.opts.showIds = e.target.checked; redraw(); };
   $("opt-grid").onchange = (e) => { renderer.opts.grid = e.target.checked; redraw(); };
 
-  const texInfo = () => { $("tex-info").textContent = `${originalTextures.count} original frames · ${Object.keys(assets.manifest.objects).length} custom repo images · ${assets.packCount} loaded files`; $("btn-original-textures").textContent = originalTextures.enabled ? "Disable original textures" : "Enable original textures"; };
+  const texInfo = () => {
+    const status = originalTextures.ready
+      ? `${originalTextures.count} original frames loaded`
+      : `Original textures FAILED to load: ${originalTextures.error || "no atlas frames found"}`;
+    $("tex-info").textContent = `${status} · ${Object.keys(assets.manifest.objects).length} custom repo images · ${assets.packCount} loaded files`;
+    $("btn-original-textures").textContent = originalTextures.enabled ? "Disable original textures" : "Enable original textures";
+  };
   $("btn-original-textures").onclick = () => { originalTextures.setEnabled(!originalTextures.enabled); assets.originalTexturesChanged(); texInfo(); toast(originalTextures.enabled ? "Original textures enabled" : "Original textures disabled"); };
   const frameSelect = $("original-frame-select");
   const renderFrameOptions = () => {
