@@ -32,6 +32,12 @@
     <summary>Textures</summary>
     <div class="menu">
       <button id="btn-original-textures">Disable original textures</button>
+      <small>Map a sheet frame to an object ID</small>
+      <div class="row"><input id="original-object-id" type="number" min="1" step="1" placeholder="Object ID" aria-label="Object ID to map"></div>
+      <div class="row"><input id="original-frame-search" type="search" placeholder="Find atlas frame…" aria-label="Search original texture frames"></div>
+      <select id="original-frame-select" aria-label="Original texture frame"><option value="">Type to search frames…</option></select>
+      <button id="btn-assign-original-frame">Assign frame</button>
+      <button id="btn-clear-original-frame">Clear custom mapping</button>
       <button id="btn-tex-load">Load files…</button>
       <button id="btn-tex-clear">Clear loaded</button>
       <small id="tex-info"></small>
