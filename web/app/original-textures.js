@@ -75,7 +75,7 @@ const FRAME_SUFFIX = /(?:_color)?_?\d{3}\.png$/i;
 function baseFrameName(name) { return name.replace(FRAME_SUFFIX, "").toLowerCase(); }
 function scoreFrame(frameName, name, id, cls) {
   const f = baseFrameName(frameName), n = name.toLowerCase();
-  if (f.includes("_color") || f.includes("glow") || f.startsWith("d_") || /(?:^|_)\d{2}$/.test(f)) return -100;
+  if (/_color_/i.test(frameName) || f.includes("glow") || f.startsWith("d_")) return -100;
   let score = 0;
   const pairs = [
     [/spike|thorn/, /spike|thorn|hazard/],
