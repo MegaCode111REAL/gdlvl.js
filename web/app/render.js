@@ -55,7 +55,7 @@ export class Renderer {
     this.dirty = true; this.dpr = 1;
     this.onView = null;    // called whenever pan or zoom changes
     assets.onUpdate = () => this.requestDraw();
-    this.loop = () => { requestAnimationFrame(this.loop); if (this.dirty) { this.dirty = false; try { this.draw(); } catch (e) { console.error(e); } } };
+    this.loop = () => { if (this.dirty) { this.dirty = false; this.draw(); } requestAnimationFrame(this.loop); };
     requestAnimationFrame(this.loop);
   }
 
