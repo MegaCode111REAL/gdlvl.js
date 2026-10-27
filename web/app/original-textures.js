@@ -37,18 +37,18 @@ function parseFrames(xml, sheetName, image) {
     if (rect.length < 4 || source.length < 2 || offset.length < 2) continue;
     const rotated = plistBool(d, "textureRotated");
     const [x, y, packedW, packedH] = rect;
-    const cropW = rotated ? packedH : packedW;
-    const cropH = rotated ? packedW : packedH;
+    // Cocos plist textureRect/spriteSize retain the frame's logical dimensions,
+    // even when the pixels in the atlas are stored rotated. Keep the crop canvas
+    // in that logical orientation and sample the transposed packed rectangle.
+    const cropW = packedW;
+    const cropH = packedH;
     const crop = document.createElement("canvas");
     crop.width = Math.max(1, cropW); crop.height = Math.max(1, cropH);
     const cg = crop.getContext("2d");
     if (rotated) {
-      // TexturePacker stores rotated frames with their packed width/height swapped.
-      // Draw the packed rectangle into the correctly swapped destination before rotating it
-      // back into the frame's unrotated orientation.
       cg.translate(cropW / 2, cropH / 2);
       cg.rotate(-Math.PI / 2);
-      cg.drawImage(image, x, y, packedW, packedH, -cropH / 2, -cropW / 2, cropH, cropW);
+      cg.drawImage(image, x, y, packedH, packedW, -cropH / 2, -cropW / 2, cropH, cropW);
     } else {
       cg.drawImage(image, x, y, packedW, packedH, 0, 0, cropW, cropH);
     }
