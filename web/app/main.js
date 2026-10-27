@@ -1,7 +1,7 @@
 // Wires the store, renderer, panels and input together.
 import { Store } from "./store.js";
 import { Assets } from "./assets.js";
-import { Renderer, placementAnchor } from "./render.js";
+import { Renderer } from "./render.js";
 import { initPalette, initProps, initColors, initInfo } from "./ui.js";
 import { objectName } from "../../src/gdlvl.js";
 import { installOriginalTextures } from "./original-textures.js";
@@ -115,15 +115,9 @@ async function main() {
 
   // ---- canvas input -----------------------------------------------------------------------
   const local = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-  const snapPoint = (w, e, id = store.armed) => {
-    const step = e?.altKey ? 0 : store.snap;
-    if (!step || id == null) return { x: +w.x.toFixed(2), y: +w.y.toFixed(2) };
-    const anchor = placementAnchor(id, assets.sprite(id));
-    const xGridOffset = anchor.x > 0 ? 0 : 15;
-    return {
-      x: Math.round((w.x - xGridOffset) / step) * step + xGridOffset,
-      y: Math.round(w.y / step) * step,
-    };
+  const snapPoint = (w, e) => {
+    const s = e?.altKey ? 0 : store.snap;
+    return s ? { x: Math.round((w.x - 15) / s) * s + 15, y: Math.round((w.y - 15) / s) * s + 15 } : { x: +w.x.toFixed(2), y: +w.y.toFixed(2) };
   };
   const snapDelta = (d, e) => { const s = e?.altKey ? 0 : store.snap; return s ? Math.round(d / s) * s : +d.toFixed(2); };
 
