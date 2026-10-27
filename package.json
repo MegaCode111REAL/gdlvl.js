@@ -14,6 +14,7 @@
     "build:data": "node scripts/build-data.mjs",
     "build:assets": "node scripts/build-assets.mjs",
     "serve": "node scripts/serve.mjs",
-    "test:web": "node test/web-smoke.mjs"
+    "test:web": "node test/web-smoke.mjs",
+    "test:anchor": "node test/anchor-web.mjs"
   }
 }

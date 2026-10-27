@@ -5,6 +5,7 @@ import { Renderer } from "./render.js";
 import { initPalette, initProps, initColors, initInfo } from "./ui.js";
 import { objectName } from "../../src/gdlvl.js";
 import { installOriginalTextures } from "./original-textures.js";
+import { placementPos } from "./anchor.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -129,7 +130,7 @@ async function main() {
     const p = local(e), w = renderer.toWorld(p.x, p.y);
     if (e.button === 1 || e.button === 2 || (e.button === 0 && spaceDown)) { mode = "pan"; last = p; e.preventDefault(); return; }
     if (e.button !== 0) return;
-    if (store.armed != null) { const s = snapPoint(w, e); store.place(store.armed, s.x, s.y); return; }
+    if (store.armed != null) { const s = placementPos(assets, store.armed, snapPoint(w, e)); store.place(store.armed, s.x, s.y); return; }
     const hit = renderer.pick(w.x, w.y);
     if (hit) {
       if (e.shiftKey) { store.toggle(hit); return; }
@@ -144,7 +145,7 @@ async function main() {
     const p = local(e), w = renderer.toWorld(p.x, p.y);
     cursor = w;
     $("st-cursor").textContent = `x ${w.x.toFixed(1)}  y ${w.y.toFixed(1)}`;
-    if (store.armed != null && !mode) { const s = snapPoint(w, e); renderer.ghost = { id: store.armed, x: s.x, y: s.y }; redraw(); }
+    if (store.armed != null && !mode) { const s = placementPos(assets, store.armed, snapPoint(w, e)); renderer.ghost = { id: store.armed, x: s.x, y: s.y }; redraw(); }
     if (mode === "pan") { renderer.pan(p.x - last.x, p.y - last.y); last = p; }
     else if (mode === "move") store.dragTo(snapDelta(w.x - start.x, e), snapDelta(w.y - start.y, e));
     else if (mode === "box") { renderer.box.x1 = w.x; renderer.box.y1 = w.y; redraw(); }
