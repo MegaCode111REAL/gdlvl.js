@@ -1,7 +1,7 @@
 // Wires the store, renderer, panels and input together.
 import { Store } from "./store.js";
 import { Assets } from "./assets.js";
-import { Renderer } from "./render.js";
+import { Renderer } from "./render.js?v=ghost-outline-fix-2";
 import { initPalette, initProps, initColors, initInfo } from "./ui.js";
 import { objectName } from "../../src/gdlvl.js";
 import { installOriginalTextures } from "./original-textures.js";
