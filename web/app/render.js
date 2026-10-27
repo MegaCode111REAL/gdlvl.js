@@ -285,7 +285,7 @@ export class Renderer {
       }
       ctx.globalAlpha = 1;
       ctx.strokeStyle = "rgba(61,169,255,.9)"; ctx.lineWidth = dpr;
-      ctx.strokeRect(sxOf(g.x) - (s.w * z) / 2, syOf(g.y) - (s.h * z) / 2, s.w * z, s.h * z);
+      ctx.strokeRect(sxOf(g.x + a.x) - (s.w * z) / 2, syOf(g.y + a.y) - (s.h * z) / 2, s.w * z, s.h * z);
     }
 
     // selection box
