@@ -1,7 +1,7 @@
 // Editor state and every operation that changes the level. The UI never edits the level directly:
 // it calls these, which keep selection, undo history and autosave consistent.
 import { Level, GDObject, fieldsOf } from "../../src/gdlvl.js";
-import { parseObj } from "./render.js";
+import { parseObj } from "./render.js?v=ghost-outline-fix-2";
 import { kvGet, kvSet } from "./idb.js";
 
 const HISTORY_LIMIT = 100;
