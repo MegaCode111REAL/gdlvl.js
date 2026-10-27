@@ -2,8 +2,6 @@
 // the ground is y = 0. Objects are parsed straight from their raw key/value pairs each frame,
 // which is much faster than going through the schema for every property of every object.
 
-import { kindOf } from "./assets.js";
-
 const D2R = Math.PI / 180;
 const WHITE = { r: 255, g: 255, b: 255, a: 1, add: false };
 
@@ -30,14 +28,6 @@ export function parseObj(o) {
     }
   }
   return p;
-}
-
-/** Local sprite offset from the object's grid anchor. */
-export function placementAnchor(id, sprite) {
-  const kind = kindOf(id);
-  if (!["block", "slab", "slope", "wideslope"].includes(kind)) return { x: 0, y: 0 };
-  // A one-cell solid anchors at bottom-centre; a multi-cell solid anchors bottom-left.
-  return { x: sprite.w > 30.01 ? sprite.w / 2 : 0, y: sprite.h / 2 };
 }
 
 /** Colour channels from the level header: Map<channel id, { r, g, b, a, add }>. */
@@ -158,14 +148,14 @@ export class Renderer {
   pick(x, y) {
     const order = this.getOrder();
     for (let i = order.length - 1; i >= 0; i--) {
-      const o = order[i], p = parseObj(o), s = this.assets.sprite(p.id), a = placementAnchor(p.id, s);
+      const o = order[i], p = parseObj(o), s = this.assets.sprite(p.id);
       const th = p.rot * D2R, c = Math.cos(th), sn = Math.sin(th), dx = x - p.x, dy = y - p.y;
       // Convert world coordinates (Y up) to the sprite's local canvas coordinates (Y down),
       // then undo its rotation and scale. This must mirror draw()'s setTransform exactly.
       const scaleX = p.sx * p.sc, scaleY = p.sy * p.sc;
       if (!Number.isFinite(scaleX) || !Number.isFinite(scaleY) || !scaleX || !scaleY) continue;
-      const lx = (dx * c - dy * sn) / scaleX - a.x;
-      const ly = (-dx * sn - dy * c) / scaleY - a.y;
+      const lx = (dx * c - dy * sn) / scaleX;
+      const ly = (-dx * sn - dy * c) / scaleY;
       if (Math.abs(lx) <= s.w / 2 && Math.abs(ly) <= s.h / 2) return o;
     }
     return null;
@@ -225,11 +215,9 @@ export class Renderer {
       const o = order[i], p = parseObj(o), s = assets.sprite(p.id);
       const reach = Math.max(s.w * p.sx, s.h * p.sy) * p.sc * 0.75;
       if (p.x + reach < left || p.x - reach > right || p.y + reach < bottom || p.y - reach > top) continue;
-      const th = p.rot * D2R, c = Math.cos(th), sn = Math.sin(th), a = placementAnchor(p.id, s);
+      const th = p.rot * D2R, c = Math.cos(th), sn = Math.sin(th);
       const kx = z * p.sx * p.sc * (p.fh ? -1 : 1), ky = z * p.sy * p.sc * (p.fv ? -1 : 1);
-      const tx = sxOf(p.x) + c * kx * a.x - sn * ky * a.y;
-      const ty = syOf(p.y) + sn * kx * a.x + c * ky * a.y;
-      ctx.setTransform(c * kx, sn * kx, -sn * ky, c * ky, tx, ty);
+      ctx.setTransform(c * kx, sn * kx, -sn * ky, c * ky, sxOf(p.x), syOf(p.y));
       for (const layer of s.layers) {
         if (!layer.entry.ready) continue;
         const ch = layer.tint === "c1" ? col(p.c1 || 1004) : layer.tint === "c2" ? col(p.c2 || p.c1 || 1004) : null;
@@ -267,9 +255,9 @@ export class Renderer {
     // selection outlines
     ctx.strokeStyle = "#3da9ff";
     for (const o of store.selection) {
-      const p = parseObj(o), s = assets.sprite(p.id), a = placementAnchor(p.id, s);
+      const p = parseObj(o), s = assets.sprite(p.id);
       const th = p.rot * D2R, c = Math.cos(th), sn = Math.sin(th), kx = z * p.sx * p.sc, ky = z * p.sy * p.sc;
-      ctx.setTransform(c * kx, sn * kx, -sn * ky, c * ky, sxOf(p.x) + c * kx * a.x - sn * ky * a.y, syOf(p.y) + sn * kx * a.x + c * ky * a.y);
+      ctx.setTransform(c * kx, sn * kx, -sn * ky, c * ky, sxOf(p.x), syOf(p.y));
       ctx.lineWidth = (2 * dpr) / Math.min(kx, ky);
       ctx.strokeRect(-s.w / 2, -s.h / 2, s.w, s.h);
     }
@@ -277,11 +265,11 @@ export class Renderer {
 
     // placement ghost
     if (this.ghost) {
-      const g = this.ghost, s = assets.sprite(g.id), a = placementAnchor(g.id, s);
+      const g = this.ghost, s = assets.sprite(g.id);
       ctx.globalAlpha = 0.55;
       for (const layer of s.layers) {
         if (!layer.entry.ready) continue;
-        ctx.drawImage(layer.entry.img, sxOf(g.x + a.x) - (s.w * z) / 2, syOf(g.y + a.y) - (s.h * z) / 2, s.w * z, s.h * z);
+        ctx.drawImage(layer.entry.img, sxOf(g.x) - (s.w * z) / 2, syOf(g.y) - (s.h * z) / 2, s.w * z, s.h * z);
       }
       ctx.globalAlpha = 1;
       ctx.strokeStyle = "rgba(61,169,255,.9)"; ctx.lineWidth = dpr;
