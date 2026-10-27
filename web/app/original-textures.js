@@ -52,13 +52,14 @@ function parseFrames(xml, sheetName, image) {
     } else {
       cg.drawImage(image, x, y, packedW, packedH, 0, 0, cropW, cropH);
     }
-    // Preserve the atlas parser's original handling of rotated frames: the
-    // packed rectangle is rotated, so its source dimensions and trim offsets
-    // must be mapped back to the sprite's displayed orientation as well.
-    const realW = rotated ? source[1] : source[0];
-    const realH = rotated ? source[0] : source[1];
-    const offX = rotated ? offset[1] : offset[0];
-    const offY = rotated ? offset[0] : offset[1];
+    // spriteSourceSize and spriteOffset are already expressed in the
+    // sprite's displayed (unrotated) coordinate system. Swapping these for
+    // textureRotated makes tall portals report landscape dimensions, which
+    // then breaks their selection/hitbox geometry.
+    const realW = source[0];
+    const realH = source[1];
+    const offX = offset[0];
+    const offY = offset[1];
     const out = document.createElement("canvas");
     out.width = Math.max(1, realW); out.height = Math.max(1, realH);
     const ox = Math.floor((realW - cropW) / 2 + offX);
