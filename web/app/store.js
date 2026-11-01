@@ -187,6 +187,28 @@ export class Store {
     this.commit("rotate");
   }
 
+  /** Free rotation by dragging (Rotate toggle): beginRotate, then rotateTo(degrees clockwise), then endRotate. */
+  beginRotate() {
+    const objs = [...this.selection];
+    if (!objs.length) return false;
+    this.rot = { c: this.center(objs), moved: false, orig: objs.map((o) => [o, o.get("x"), o.get("y"), o.get("rotation") ?? 0]) };
+    return true;
+  }
+  rotateTo(deg) {
+    if (!this.rot) return;
+    this.rot.moved = this.rot.moved || deg !== 0;
+    const th = (deg * Math.PI) / 180, cs = Math.cos(th), sn = Math.sin(th), { c } = this.rot, multi = this.rot.orig.length > 1;
+    for (const [o, x, y, r] of this.rot.orig) {
+      o.set("rotation", +((((r + deg) % 360) + 360) % 360).toFixed(4));
+      if (multi) {
+        const dx = x - c.x, dy = y - c.y;   // clockwise on screen, y up
+        o.set("x", +(c.x + dx * cs + dy * sn).toFixed(4)); o.set("y", +(c.y - dx * sn + dy * cs).toFixed(4));
+      }
+    }
+    this.rev++; for (const fn of this.listeners) fn("drag");
+  }
+  endRotate() { const moved = this.rot?.moved; this.rot = null; if (moved) this.commit("rotate"); }
+
   /** Flip the selection horizontally (axis "x") or vertically ("y"); several objects mirror around their middle. */
   flipSelected(axis) {
     const objs = [...this.selection];

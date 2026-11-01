@@ -57,7 +57,7 @@ await page.mouse.click(at.x, at.y);
 assert.equal(await ed(() => window.__editor.store.selection.size), 1); step("clicking an object selects it");
 assert.match(await page.locator("#props .sel-title").innerText(), /Spike/);
 
-await page.keyboard.press("ArrowRight");
+await page.keyboard.press("d");
 assert.equal(await ed(() => [...window.__editor.store.selection][0].get("x")), spike.x + 30); step("arrow key moves by one grid step");
 await page.keyboard.press("Control+z");
 assert.equal(await ed(() => [...window.__editor.store.selection][0]?.get("x")), spike.x); step("undo puts it back");

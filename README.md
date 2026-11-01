@@ -39,9 +39,14 @@ redirects to `web/`, and the page imports the library from `src/`.
 - **Select:** click, shift-click, or drag a box. Drag to move; it snaps to the grid (Alt = no snap).
 - **Edit:** the properties panel is generated from the schema, so a Move trigger shows
   `target_group`, `move_x`, `duration`, `easing` and so on. Colour channels are editable too.
-- **Keys:** `Del` delete, arrows nudge, `R` rotate, `F` flip (Shift = other axis), `Ctrl+Z/Y` undo/redo,
-  `Ctrl+C/V/D` copy/paste/duplicate, `Ctrl+A` select all, `G` cycle grid, `Home` fit level, `Esc` cancel.
-  Pan with middle or right mouse button, or Space + drag; zoom with the wheel.
+- **Keys** (the Geometry Dash editor's, from [DefKey](https://defkey.com/geometry-dash-level-editor-shortcuts)):
+  `W A S D` move (Shift = 1 unit), `Q` / `E` rotate 90 counter-clockwise / clockwise, `Alt+Q` / `Alt+E` flip X / Y,
+  `1` / `2` / `3` Build / Edit / Delete mode, `F1` / `F2` previous / next build tab, `Ctrl+Z` undo, `Ctrl+Shift+Z` redo,
+  `Ctrl+C` / `Ctrl+D` / `Ctrl+V` copy / duplicate / paste, `Left` / `Right` previous / next group,
+  `R` Rotate toggle (drag to rotate), `T` Swipe toggle (drag to select), `F` Free move toggle, `G` Snap toggle,
+  mouse wheel moves the view up and down (Shift = sideways, Ctrl = zoom), `+` / `-` zoom.
+  Also `Del` delete, `Ctrl+A` select all, `Home` fit level, `Esc` cancel. Pan with middle or right mouse button, or Space + drag.
+  `Enter` (playtest) and `Ctrl+Enter` (play music) show a message: the editor can't play levels.
 - Selected triggers draw a dashed line to every object in the group they target.
 
 **Art:** the editor loads the bundled UHD Geometry Dash sprite sheets and their matching plist metadata from `data/spritesheets/`, crops frames (including packed rotations and offsets), and uses original frames where the object-to-frame association can be inferred. The texture menu can disable original textures, load custom art, or clear runtime-loaded art. Unmatched objects still use placeholders. See [web/assets/README.md](web/assets/README.md).

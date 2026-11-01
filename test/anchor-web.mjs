@@ -104,7 +104,7 @@ step("clicking the rendered sprite selects the placed object");
 
 // 6. rotate / flip / scale do not change stored placement
 const before = await last();
-await page.keyboard.press("r"); await page.keyboard.press("f");
+await page.keyboard.press("e"); await page.keyboard.press("Alt+q");
 const afterRot = await ed(() => { const o = [...window.__editor.store.selection][0]; return { x: o.get("x"), y: o.get("y") }; });
 assert.deepEqual([afterRot.x, afterRot.y], [before.x, before.y]);
 step("rotating and flipping leaves x/y alone");

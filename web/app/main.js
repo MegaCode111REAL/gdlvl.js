@@ -101,26 +101,33 @@ async function main() {
   texInfo();
 
   // ---- status, undo buttons, save time --------------------------------------------------
+  const tool = { mode: "edit", rotate: false, swipe: false, free: false, lastSnap: 30 };
   const updateUi = () => {
     $("btn-undo").disabled = !store.canUndo; $("btn-redo").disabled = !store.canRedo;
     $("st-sel").textContent = store.selection.size ? `${store.selection.size} selected` : "";
     $("st-zoom").textContent = `zoom ${Math.round(renderer.view.zoom * 50)}%`;
     $("snap").value = String(store.snap);
+    for (const b of document.querySelectorAll("[data-mode]")) b.setAttribute("aria-pressed", String(tool.mode === b.dataset.mode));
+    for (const b of document.querySelectorAll("[data-tog]")) b.setAttribute("aria-pressed", String(b.dataset.tog === "snap" ? !!store.snap : tool[b.dataset.tog]));
     const id = store.armed;
     $("hint").textContent = id != null ? `Placing ${objectName(id) ?? "#" + id}: click to place, Esc to stop` : "";
   };
-  store.on((t) => { updateUi(); redraw(); if (t === "armed" && store.armed == null) { renderer.ghost = null; } });
+  store.on((t) => {
+    if (t === "armed") { if (store.armed != null) tool.mode = "build"; else { renderer.ghost = null; if (tool.mode === "build") tool.mode = "edit"; } }
+    updateUi(); redraw();
+  });
   store.onSaved = () => { $("st-save").textContent = `Autosaved ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`; };
   renderer.onView = updateUi;
   updateUi();
 
   // ---- canvas input -----------------------------------------------------------------------
   const local = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  const effSnap = (e) => (e?.altKey || tool.free ? 0 : store.snap);
   const snapPoint = (w, e) => {
-    const s = e?.altKey ? 0 : store.snap;
+    const s = effSnap(e);
     return s ? { x: Math.round((w.x - 15) / s) * s + 15, y: Math.round((w.y - 15) / s) * s + 15 } : { x: +w.x.toFixed(2), y: +w.y.toFixed(2) };
   };
-  const snapDelta = (d, e) => { const s = e?.altKey ? 0 : store.snap; return s ? Math.round(d / s) * s : +d.toFixed(2); };
+  const snapDelta = (d, e) => { const s = effSnap(e); return s ? Math.round(d / s) * s : +d.toFixed(2); };
 
   let mode = null, start = null, last = null, additive = false, spaceDown = false, cursor = { x: 0, y: 0 };
 
@@ -130,8 +137,21 @@ async function main() {
     const p = local(e), w = renderer.toWorld(p.x, p.y);
     if (e.button === 1 || e.button === 2 || (e.button === 0 && spaceDown)) { mode = "pan"; last = p; e.preventDefault(); return; }
     if (e.button !== 0) return;
-    if (store.armed != null) { const s = placementPos(assets, store.armed, snapPoint(w, e)); store.place(store.armed, s.x, s.y); return; }
+    if (store.armed != null && tool.mode === "build") { const s = placementPos(assets, store.armed, snapPoint(w, e)); store.place(store.armed, s.x, s.y); return; }
     const hit = renderer.pick(w.x, w.y);
+    if (tool.mode === "delete") {
+      mode = "erase";
+      if (hit) { store.select([hit]); store.deleteSelected(); }
+      return;
+    }
+    if (tool.rotate && store.selection.size && store.beginRotate()) {
+      const c = store.rot.c; mode = "rotate"; start = Math.atan2(w.y - c.y, w.x - c.x); return;
+    }
+    if (tool.swipe && !e.shiftKey) {
+      mode = "swipe"; if (!additive) store.clearSelection(); additive = true;
+      if (hit) store.select([hit], true);
+      return;
+    }
     if (hit) {
       if (e.shiftKey) { store.toggle(hit); return; }
       if (!store.selection.has(hit)) store.select([hit]);
@@ -145,13 +165,23 @@ async function main() {
     const p = local(e), w = renderer.toWorld(p.x, p.y);
     cursor = w;
     $("st-cursor").textContent = `x ${w.x.toFixed(1)}  y ${w.y.toFixed(1)}`;
-    if (store.armed != null && !mode) { const s = placementPos(assets, store.armed, snapPoint(w, e)); renderer.ghost = { id: store.armed, x: s.x, y: s.y }; redraw(); }
+    if (store.armed != null && tool.mode === "build" && !mode) { const s = placementPos(assets, store.armed, snapPoint(w, e)); renderer.ghost = { id: store.armed, x: s.x, y: s.y }; redraw(); }
     if (mode === "pan") { renderer.pan(p.x - last.x, p.y - last.y); last = p; }
+    else if (mode === "rotate") {
+      const c = store.rot.c, a = Math.atan2(w.y - c.y, w.x - c.x);
+      let deg = ((start - a) * 180) / Math.PI;   // clockwise
+      if (!e.altKey && !tool.free) deg = Math.round(deg / 15) * 15;
+      store.rotateTo(deg);
+    }
+    else if (mode === "swipe") { const h = renderer.pick(w.x, w.y); if (h && !store.selection.has(h)) store.select([h], true); }
+    else if (mode === "erase") { const h = renderer.pick(w.x, w.y); if (h) { store.select([h]); store.deleteSelected(); } }
     else if (mode === "move") store.dragTo(snapDelta(w.x - start.x, e), snapDelta(w.y - start.y, e));
     else if (mode === "box") { renderer.box.x1 = w.x; renderer.box.y1 = w.y; redraw(); }
   });
   const finish = (e) => {
     if (mode === "move") store.endDrag();
+    else if (mode === "rotate") store.endRotate();
+    else if (mode === "swipe") additive = false;
     else if (mode === "box") {
       const b = renderer.box, p = local(e), tiny = Math.hypot(p.x - last.x, p.y - last.y) < 4;
       renderer.box = null;
@@ -167,19 +197,51 @@ async function main() {
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
     const p = local(e);
-    renderer.zoomAt(p.x, p.y, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)));
+    if (e.ctrlKey || e.metaKey) renderer.zoomAt(p.x, p.y, Math.exp(-e.deltaY * 0.01));   // Ctrl+wheel and pinch zoom
+    else if (e.shiftKey) renderer.pan(-(e.deltaY || e.deltaX), 0);                        // Shift+wheel: sideways
+    else renderer.pan(-e.deltaX, -e.deltaY);                                              // wheel: move the view up and down
   }, { passive: false });
 
   // ---- keyboard ---------------------------------------------------------------------------
   const SNAPS = [30, 15, 7.5, 3.75, 1, 0];
   window.addEventListener("keyup", (e) => { if (e.code === "Space") spaceDown = false; });
+  // ---- modes, toggles, tabs, groups ----------------------------------------------------------
+  const setMode = (m) => {
+    tool.mode = m;
+    if (m !== "build" && store.armed != null) { store.armed = null; renderer.ghost = null; store.emit("armed"); }
+    if (m === "build" && store.armed == null) toast("Build mode: pick an object in the list, then click to place it");
+    updateUi(); redraw();
+  };
+  const setToggle = (name) => {
+    if (name === "snap") {
+      if (store.snap) { tool.lastSnap = store.snap; store.snap = 0; } else store.snap = tool.lastSnap || 30;
+      toast(store.snap ? `Snap on (grid ${store.snap})` : "Snap off");
+    } else { tool[name] = !tool[name]; toast(`${{ rotate: "Rotate", swipe: "Swipe", free: "Free move" }[name]} ${tool[name] ? "on" : "off"}`); }
+    updateUi();
+  };
+  const stepTab = (dir) => {   // previous/next build tab = palette category
+    const sel = $("pal-class"), n = sel.options.length;
+    sel.selectedIndex = (sel.selectedIndex + dir + n) % n;
+    sel.dispatchEvent(new Event("change")); toast(`Build tab: ${sel.options[sel.selectedIndex].textContent}`);
+  };
+  let groupAt = 0;
+  const stepGroup = (dir) => {
+    const ids = [...new Set(store.level.objects.flatMap((o) => o.groupList))].sort((a, b) => a - b);
+    if (!ids.length) { toast("No groups in this level", true); return; }
+    const next = dir > 0 ? ids.find((g) => g > groupAt) ?? ids[0] : [...ids].reverse().find((g) => g < groupAt) ?? ids.at(-1);
+    groupAt = next; store.selectByGroup(next); toast(`Group ${next} (${store.selection.size} objects)`);
+  };
+  for (const b of document.querySelectorAll("[data-mode]")) b.addEventListener("click", () => setMode(b.dataset.mode));
+  for (const b of document.querySelectorAll("[data-tog]")) b.addEventListener("click", () => setToggle(b.dataset.tog));
+  updateUi();
+
   window.addEventListener("keydown", (e) => {
     const t = e.target;
     if (t instanceof HTMLInputElement || t instanceof HTMLSelectElement || t instanceof HTMLTextAreaElement) {
       if (e.key === "Escape") t.blur();
       return;
     }
-    const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+    const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase(), c = e.code;
     if (e.code === "Space") { spaceDown = true; e.preventDefault(); return; }
     if (mod && k === "z") { e.preventDefault(); e.shiftKey ? store.redo() : store.undo(); }
     else if (mod && k === "y") { e.preventDefault(); store.redo(); }
@@ -187,16 +249,30 @@ async function main() {
     else if (mod && k === "c") { e.preventDefault(); store.copy(); toast(`Copied ${store.clipboard.length} object(s)`); }
     else if (mod && k === "v") { e.preventDefault(); const s = snapPoint(cursor); store.paste(s.x, s.y); }
     else if (mod && k === "d") { e.preventDefault(); store.duplicate(); }
+    else if (mod && c === "Enter") { e.preventDefault(); toast("Playing music isn't available in this editor", true); }
     else if (mod) return;
+    else if (c === "Enter") { e.preventDefault(); toast("Playtesting isn't available in this editor: export the level and play it in Geometry Dash", true); }
     else if (k === "delete" || k === "backspace") { e.preventDefault(); store.deleteSelected(); }
-    else if (k.startsWith("arrow")) {
-      e.preventDefault();
+    // W A S D move the selection (Shift = 1 unit); arrows are previous/next group
+    else if (c === "KeyW" || c === "KeyA" || c === "KeyS" || c === "KeyD") {
       const step = e.shiftKey ? 1 : store.snap || 1;
-      store.moveSelected(k === "arrowleft" ? -step : k === "arrowright" ? step : 0, k === "arrowdown" ? -step : k === "arrowup" ? step : 0);
+      store.moveSelected(c === "KeyA" ? -step : c === "KeyD" ? step : 0, c === "KeyS" ? -step : c === "KeyW" ? step : 0);
     }
-    else if (k === "r") store.rotateSelected(e.shiftKey ? -1 : 1);
-    else if (k === "f") store.flipSelected(e.shiftKey ? "y" : "x");
-    else if (k === "g") { store.snap = SNAPS[(SNAPS.indexOf(store.snap) + 1) % SNAPS.length]; updateUi(); toast(store.snap ? `Grid ${store.snap}` : "Grid off"); }
+    else if (c === "ArrowLeft" || c === "ArrowRight") { e.preventDefault(); stepGroup(c === "ArrowRight" ? 1 : -1); }
+    else if (c === "KeyQ" && e.altKey) { e.preventDefault(); store.flipSelected("x"); }
+    else if (c === "KeyE" && e.altKey) { e.preventDefault(); store.flipSelected("y"); }
+    else if (c === "KeyQ") store.rotateSelected(-1);
+    else if (c === "KeyE") store.rotateSelected(1);
+    else if (k === "1") setMode("build");
+    else if (k === "2") setMode("edit");
+    else if (k === "3") setMode("delete");
+    else if (c === "F1" || c === "F2") { e.preventDefault(); stepTab(c === "F2" ? 1 : -1); }
+    else if (c === "KeyR") setToggle("rotate");
+    else if (c === "KeyT") setToggle("swipe");
+    else if (c === "KeyF") setToggle("free");
+    else if (c === "KeyG") setToggle("snap");
+    else if (k === "+" || k === "=" || c === "NumpadAdd") { const r = canvas.getBoundingClientRect(); renderer.zoomAt(r.width / 2, r.height / 2, 1.25); }
+    else if (k === "-" || k === "_" || c === "NumpadSubtract") { const r = canvas.getBoundingClientRect(); renderer.zoomAt(r.width / 2, r.height / 2, 0.8); }
     else if (k === "home") renderer.fit();
     else if (k === "escape") { if (store.armed != null) { store.armed = null; renderer.ghost = null; store.emit("armed"); } else store.clearSelection(); }
   });
