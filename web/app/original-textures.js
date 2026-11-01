@@ -8,6 +8,8 @@ const SHEETS = [
   ["GJ_GameSheet-uhd", "../../data/spritesheets/GJ_GameSheet-uhd.png", "../../data/spritesheets/GJ_GameSheet-uhd.plist"],
   ["GJ_GameSheet02-uhd", "../../data/spritesheets/GJ_GameSheet02-uhd.png", "../../data/spritesheets/GJ_GameSheet02-uhd.plist"],
   ["GJ_GameSheet03-uhd", "../../data/spritesheets/GJ_GameSheet03-uhd.png", "../../data/spritesheets/GJ_GameSheet03-uhd.plist"],
+  ["GJ_GameSheet04-uhd", "../../data/spritesheets/GJ_GameSheet04-uhd.png", "../../data/spritesheets/GJ_GameSheet04-uhd.plist"],
+  ["GJ_GameSheetGlow-uhd", "../../data/spritesheets/GJ_GameSheetGlow-uhd.png", "../../data/spritesheets/GJ_GameSheetGlow-uhd.plist"],
 ];
 const NUMBER = /-?\d+(?:\.\d+)?/g;
 const parsePoint = (value) => (String(value ?? "").match(NUMBER) ?? []).map(Number);
