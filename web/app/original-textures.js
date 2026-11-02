@@ -114,6 +114,7 @@ export class OriginalTextures {
     this.ready = false;
     this.error = "";
     this.mapping = new Map();
+    this.rawMapping = new Map();   // every id -> frame name the mapping file lists, even if the frame is not in the loaded sheets
     this.resolved = new Map();
     this.count = 0;
   }
@@ -146,6 +147,7 @@ export class OriginalTextures {
         if (!match) continue;
         const frameName = match[1].trim();
         const id = Number(match[2]);
+        if (Number.isSafeInteger(id) && id > 0) this.rawMapping.set(id, frameName);
         if (this.frames.has(frameName) && Number.isSafeInteger(id) && id > 0) this.mapping.set(id, frameName);
       }
       if (!this.mapping.size) throw new Error("No object IDs matched loaded atlas frames");
@@ -226,6 +228,27 @@ export class OriginalTextures {
     const q = query.trim().toLowerCase();
     const names = [...this.frames.keys()];
     return q ? names.filter((name) => name.toLowerCase().includes(q)).slice(0, 150) : [];
+  }
+
+  /** For each { id, name, className }: "ok", "frame-missing" (mapped to a frame the loaded sheets lack) or "unmapped". */
+  coverage(objects) {
+    return objects.map((o) => {
+      const mapped = this.mapping.get(o.id), raw = this.rawMapping.get(o.id);
+      if (mapped) return { ...o, status: "ok", frame: mapped };
+      if (raw) return { ...o, status: "frame-missing", frame: raw };
+      return { ...o, status: "unmapped", frame: "" };
+    });
+  }
+
+  report(objects) {
+    const rows = this.coverage(objects), n = (st) => rows.filter((r) => r.status === st).length;
+    const head = [
+      `Textures: ${[...this.bySheet].map(([name, f]) => `${name} (${f.size})`).join(", ")}`,
+      `Mapping: ${this.mappingSource ?? "none"}`,
+      `Objects: ${rows.length} · with texture ${n("ok")} · mapped but frame not in the loaded sheets ${n("frame-missing")} · no mapping ${n("unmapped")}`,
+      "id\tstatus\tframe\tclass\tname",
+    ];
+    return head.concat(rows.filter((r) => r.status !== "ok").map((r) => [r.id, r.status, r.frame, r.className, r.name].join("\t"))).join("\n") + "\n";
   }
 
   setEnabled(enabled) { this.enabled = !!enabled; this.resolved.clear(); }

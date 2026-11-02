@@ -3,7 +3,7 @@ import { Store } from "./store.js";
 import { Assets } from "./assets.js";
 import { Renderer } from "./render.js?v=ghost-outline-fix-2";
 import { initPalette, initProps, initColors, initInfo } from "./ui.js";
-import { objectName } from "../../src/gdlvl.js";
+import { objectName, findObjects } from "../../src/gdlvl.js";
 import { installOriginalTextures } from "./original-textures.js";
 import { placementPos } from "./anchor.js";
 
@@ -73,6 +73,12 @@ async function main() {
     $("btn-original-textures").textContent = originalTextures.enabled ? "Disable original textures" : "Enable original textures";
   };
   $("btn-original-textures").onclick = () => { originalTextures.setEnabled(!originalTextures.enabled); assets.originalTexturesChanged(); texInfo(); toast(originalTextures.enabled ? "Original textures enabled" : "Original textures disabled"); };
+  $("btn-tex-report").onclick = guard(() => {
+    const text = originalTextures.report(findObjects("", 100000));
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([text], { type: "text/plain" })), download: "missing-textures.txt" });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast(text.split("\n")[2]);
+  });
   const frameSelect = $("original-frame-select");
   const renderFrameOptions = () => {
     const names = originalTextures.frameNames($("original-frame-search").value);
